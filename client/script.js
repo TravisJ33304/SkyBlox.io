@@ -1,20 +1,24 @@
 // canvas
-let canvas, ctx;
+var canvas, ctx;
 // Set the time between each frame
-const FPS = 60;
+var fps = 60;
 // connect to server
-let socket = io();
+var socket = io();
 // input variables
-let keys = [];
+var keys = [];
 
-let mouse = {
+var mouse = {
     x: 0,
     y: 0,
-    down: false
+    click: false
 };
 // screen variables
-let centerX = 0;
-let centerY = 0;
+var centerX = 0;
+var centerY = 0;
+
+socket.on("serverPing", function(data) {
+    // retrieve data from server
+});
 
 function resize() {
     // resize the window
@@ -25,6 +29,15 @@ function resize() {
     centerY = Math.floor(canvas.height / 2);
 }
 
+function render() {
+    window.setInterval(function () {
+        window.requestAnimationFrame(function () {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // clear canvas
+        });
+    }, 1000/fps);
+}
+
+// input events
 document.onkeydown = function (e) {
     keys.push(e.key);
 };
@@ -41,14 +54,12 @@ document.onkeyup = function (e) {
     }
 };
 
-window.onload = function () {
+window.onload = function () { // initialize the canvas and input
     // get canvas and context
     canvas = document.getElementById("canvas");
     ctx = canvas.getContext("2d");
-    // general canvas font
-    ctx.font = "24px verdana";
-    // size window
-    resize();
+    ctx.font = "24px verdana"; // general canvas font
+    resize(); // size window
     // canvas input events
     canvas.onmousedown = function () {
         mouse.down = true;
@@ -59,8 +70,8 @@ window.onload = function () {
     };
 
     canvas.onmouseenter = function (e) {
-        mouse.x = e.clientX - canvas.offsetLeft - translationX;
-        mouse.y = e.clientY - canvas.offsetTop - translationY;
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
     };
 
     canvas.onmousemove = function (e) {
@@ -77,12 +88,3 @@ window.onload = function () {
         e.preventDefault();
     };
 };
-
-function render() {
-    window.setInterval(function () {
-        window.requestAnimationFrame(function () {
-            // clear canvas
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-        });
-    }, 1000 / FPS);
-}
