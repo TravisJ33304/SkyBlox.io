@@ -20,8 +20,7 @@ socket.on("serverPing", function(data) {
     // retrieve data from server
 });
 
-function resize() {
-    // resize the window
+function resize() { // resize the window
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
@@ -29,7 +28,7 @@ function resize() {
     centerY = Math.floor(canvas.height / 2);
 }
 
-function render() {
+function render() { // draw game objects
     window.setInterval(function () {
         window.requestAnimationFrame(function () {
             ctx.clearRect(0, 0, canvas.width, canvas.height); // clear canvas
@@ -37,7 +36,7 @@ function render() {
     }, 1000/fps);
 }
 
-// input events
+// key input events
 document.onkeydown = function (e) {
     keys.push(e.key);
 };
@@ -84,7 +83,7 @@ window.onload = function () { // initialize the canvas and input
         mouse.y = e.clientY - canvas.offsetTop - translationY;
     };
 
-    canvas.oncontextmenu = function (e) {
+    canvas.oncontextmenu = function (e) { // no context menu on right click
         e.preventDefault();
     };
 };

@@ -27,7 +27,7 @@ io.on("connection", function (socket) {
     });
 });
 
-http.listen(8080, function () {
+http.listen(8080, function () { // Start the server
     console.log("listening");
 });
 
