@@ -6,8 +6,8 @@
         <link href="https://fonts.googleapis.com/css?family=Roboto&display=swap" rel="stylesheet"/>
         <link href="/client/style.css" rel="stylesheet"/>
     </head>
-    <body onresize="resize()">
-        <label for="name">Username: </label> <input type="text" name="name" id="name"> <button onclick="socket.emit('initialPing', document.getElementById('name').value)">Play</button>
+    <body>
+        <label for="name">Username: </label> <input type="text" name="name" id="name"> <button onclick="init()">Play</button>
         <canvas id="canvas"></canvas>
 
         <script src="/socket.io/socket.io.js"></script>

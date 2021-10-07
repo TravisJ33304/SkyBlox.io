@@ -1,10 +1,13 @@
-var express = require("express");
-var app = express();
-var http = require("http").createServer(app);
+let express = require("express");
+let app = express();
+let http = require("http").createServer(app);
 
-var io = require("socket.io")(http);
+let io = require("socket.io")(http);
 
-var tps = 64;
+const tps = 64; // set the maximum game ticks per second
+const port = 8080; // server port
+
+let clients = []; // store active users
 
 app.use("/client", express.static(__dirname + "/client"));
 
@@ -13,24 +16,33 @@ app.get("/", function (req, res) {
 });
 
 io.on("connection", function (socket) {
-    console.log("user connected: " + socket.id);
-    socket.name = socket.id;
-    socket.on("clientPing", function(data) {
-        socket.input = data;
+    console.log("User connected: " + socket.id);
+    clients.push(socket); // add to active users
+    socket.on("initialPing", function(data) {
+        socket.name = data.name; // set player username
+        // SEND DATA FOR NEARBY OBJECTS ONLY FOR SECURITY
+        let data = { // TODO send players and map data
+            player: socket,
+        };
+        socket.emit("serverPing", data);
     });
-    socket.on("initialPing", function(name) {
-        socket.name = name;
-        socket.emit("serverPing", {socket: socket}); // TODO send players and map data
+    socket.on("clientPing", function(data) {
+        socket.input = data; // store input data
+        data = {
+            player: socket,
+        };
+        socket.emit("serverPing", data);
     });
     socket.on("disconnect", function() {
-        console.log("user disconnected: " + socket.id);
+        console.log("User disconnected: " + socket.id);
+        clients.splice(clients.indexOf(socket), 1); // remove userdata
     });
 });
 
-http.listen(8080, function () { // Start the server
-    console.log("listening");
+http.listen(port, function () { // start the server
+    console.log("Listening on port: " + port);
 });
 
 setInterval(function() { // server game tick
-
+    clients.forEach();
 }, 1000/tps);
