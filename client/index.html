@@ -7,7 +7,9 @@
         <link href="/client/style.css" rel="stylesheet"/>
     </head>
     <body>
-        <label for="name">Username: </label> <input type="text" name="name" id="name"> <button onclick="init()">Play</button>
+        <div id="join">
+            <label for="name">Username: </label> <input type="text" name="name" id="name"> <button onclick="init()">Play</button>
+        </div>
         <canvas id="canvas"></canvas>
 
         <script src="/socket.io/socket.io.js"></script>
