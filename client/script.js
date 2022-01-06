@@ -32,6 +32,11 @@ socket.on("serverPing", function(data) { // recieve server data
     socket.emit("clientPing", data);
 });
 
+function mouseAt(e) {
+    input.mouse.x = e.clientX;
+    input.mouse.y = e.clientY;
+}
+
 function resize() { // resize the window
     input.canvas.width = window.innerWidth;
     input.canvas.height = window.innerHeight;
@@ -45,21 +50,21 @@ function render() { // draw game objects
     window.setInterval(function () { // main game render loop
         window.requestAnimationFrame(function () {
             ctx.clearRect(0, 0, input.canvas.width, input.canvas.height); // erase canvas to render new frame
-            for (obj in objects) // draw each game object
+            for (obj of objects) // draw each game object
                 obj.draw(ctx);
         });
     }, 1000/fps);
 }
 
 // key input events
-document.onkeydown = function (e) { // record key presses
+document.onkeydown = function(e) { // record key presses
     input.keys.push(e.key.toLowerCase());
 };
 
-document.onkeyup = function (e) { // requires further testing and optimization
-    while (input.keys.includes(e.key.toLowerCase())) {
-        input.keys.splice(input.keys.indexOf(e.key.toLowerCase()), 1);
-    }
+document.onkeyup = function(e) { // requires further testing and optimization
+    let key = e.key.toLowerCase;
+    while (input.keys.includes(key))
+        input.keys.splice(input.keys.indexOf(key), 1);
 };
 
 window.onload = function () { // initialize the canvas and input
@@ -68,30 +73,17 @@ window.onload = function () { // initialize the canvas and input
     resize(); // size canvas to window
     document.body.onresize = resize(); // automatically resize canvas with the window
     // mouse tracking events
-    input.canvas.onmousedown = function () {
+    input.canvas.onmousedown = function() {
         input.mouse.down = true;
     };
-
-    input.canvas.onmouseup = function () {
+    input.canvas.onmouseup = function() {
         input.mouse.down = false;
     };
-
-    input.canvas.onmouseenter = function (e) {
-        input.mouse.x = e.clientX;
-        input.mouse.y = e.clientY;
-    };
-
-    input.canvas.onmousemove = function (e) {
-        input.mouse.x = e.clientX - input.canvas.offsetLeft - translationX;
-        input.mouse.y = e.clientY - input.canvas.offsetTop - translationY;
-    };
-
-    input.canvas.onmouseover = function (e) {
-        input.mouse.x = e.clientX - input.canvas.offsetLeft - translationX;
-        input.mouse.y = e.clientY - input.canvas.offsetTop - translationY;
-    };
-
-    input.canvas.oncontextmenu = function (e) { // no context menu on right click
+    // get mouse position
+    input.canvas.onmouseenter = mouseAt(e);
+    input.canvas.onmousemove = mouseAt(e);
+    input.canvas.onmouseover = mouseAt(e);
+    input.canvas.oncontextmenu = function(e) { // remove context menu on right click
         e.preventDefault();
     };
 };

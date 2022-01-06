@@ -8,7 +8,7 @@ let io = require("socket.io")(http);
 const tps = 64; // set the maximum game ticks per second
 const port = 8080; // server port
 
-let objects = []; // store active users
+let objects = []; // store active game objects
 // serve webpage to client
 app.use("/client", express.static(__dirname + "/client"));
 
@@ -60,12 +60,12 @@ function edgeCollision(obj1, obj2) { // prevent objects from crossing each other
 function getFOV(player) {
     let nearby = [];
     let fov = {
-        x: 0,
-        y: 0,
-        w: 0,
-        h: 0
+        x: player.x - 1920,
+        y: player.y - 1080,
+        w: player.x + 1920,
+        h: player.y + 1080
     };
-    for (obj in objects) {
+    for (obj of objects) {
         if (getCollision(fov, obj))
             nearby.push(obj);
     }
@@ -82,15 +82,21 @@ function createPlayer(obj) { // add player attributes when player connects
         h: 0,
         ang: 0,
         img: "",
+        tools: ["none","none","none","none","none"],
+        equipped: 0,
         draw: function(ctx) {
-            ctx.save();
+            // draw character
+            ctx.save(); // rotate canvas to draw player direction
             ctx.translate(this.x, this.y);
             ctx.rotate(this.ang);
-            ctx.drawImage(this.img, this.x, this.y, this.w, this.h);
+            ctx.drawImage(this.img, this.x, this.y); // draw player image
+            ctx.drawImage(this.tools[equipped], this.x, this.y); // draw tool equipped
             ctx.restore();
+            // render HUD
+            ctx.drawRect(this.input.canvas.width - 320, 20, 300, 400); // inventory
         },
         update: function() {
-
+            // process input
         }
     };
 }
@@ -128,17 +134,20 @@ http.listen(port, function () { // start the server
 // run the game
 setInterval(function() { // server game tick
     let updated = [];
-    for (obj in objects) {
-        if (obj.type == "player") {
-            obj.update();
-            obj.updated = true;
-            for (near in getFOV(obj))
-                if (near.updated === false) {
-                    near.update();
-                    near.updated = true;
-                }
+    for (obj of objects) { // iterate through game objects
+        if (obj.type == "player") { // find players
+            if (obj.updated === false) { // update player if not done yet
+                obj.update();
+                obj.updated = true;
+            }
+            for (near of getFOV(obj)) { // update the objects around the player
+                if (near.updated === true)
+                    continue;
+                near.update();
+                near.updated = true;
+            }
         }
     }
-    for (obj in updated)
+    for (obj of updated)
         obj.updated = false;
 }, 1000/tps);
