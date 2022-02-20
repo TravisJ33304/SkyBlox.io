@@ -57,33 +57,73 @@ function edgeCollision(obj1, obj2) { // prevent objects from crossing each other
     return colDir;
 }
 
-function getFOV(player) {
+function getFOV(Player) { // take a player and return nearby objects
     let nearby = [];
-    let fov = {
-        x: player.x - 1920,
-        y: player.y - 1080,
-        w: player.x + 1920,
-        h: player.y + 1080
+    let fov = { // create an object to represent the players vision to compare to objects
+        x: Player.x - 1920,
+        y: Player.y - 1080,
+        w: Player.x + 1920,
+        h: Player.y + 1080
     };
-    for (obj of objects) {
+    for (let obj of objects)
         if (getCollision(fov, obj))
             nearby.push(obj);
-    }
     return nearby;
 }
+
+function respawnPlayer(Player) { // player dies and gets reset
+    Player = {
+        ...Player,
+        x: 0,
+        y: 0,
+        vx: 0,
+        vy: 0,
+        tools: ["none","none","none","none","none"],
+        equipped: 0,
+        inventory: {
+            wood: 0,
+            stone: 0,
+            iron: 0,
+            gold: 0,
+            diamond: 0
+        },
+    };
+}
 // classes/objects
-function createPlayer(obj) { // add player attributes when player connects
-    obj = {
-        ...obj,
-        type: "player",
+function Player(obj) { // add player attributes when player connects
+    return {
+        ...obj, // spread player to socket object
+        type: "player", // type of object
+        // position and size of player
         x: 0,
         y: 0,
         w: 0,
         h: 0,
         ang: 0,
+        health: 200,
+        stamina: 200,
+        resting: true,
+        // movement
+        vx: 0,
+        vy: 0,
+        maxSpeed: 1,
+        // rendering and assets
+        fov: [], // nearby objects
         img: "",
+        // items
         tools: ["none","none","none","none","none"],
         equipped: 0,
+        inventory: {
+            wood: 0,
+            stone: 0,
+            iron: 0,
+            gold: 0,
+            diamond: 0
+        },
+        drawSelf: function(ctx) { // used by the client to render player specific data
+            // render HUD
+            ctx.drawRect(this.input.canvas.width - 320, 20, 300, 400); // inventory
+        },
         draw: function(ctx) {
             // draw character
             ctx.save(); // rotate canvas to draw player direction
@@ -92,25 +132,57 @@ function createPlayer(obj) { // add player attributes when player connects
             ctx.drawImage(this.img, this.x, this.y); // draw player image
             ctx.drawImage(this.tools[equipped], this.x, this.y); // draw tool equipped
             ctx.restore();
-            // render HUD
-            ctx.drawRect(this.input.canvas.width - 320, 20, 300, 400); // inventory
         },
         update: function() {
+            var self = this; // pass to function scope
             // process input
+            if (this.keys.includes("shift") && this.stamina > 0) { // sprinting
+                this.maxSpeed = 2;
+                this.stamina--;
+                this.resting = false;
+                if (this.stamina === 0) // out of stamina
+                    setTimeout(function() { // wait to regenerate stamina
+                        self.resting = true;
+                    }, 1000);
+            } else // walking
+                this.maxSpeed = 1;
+            if (this.resting && this.stamina < 200) // regaining stamina
+                this.stamina++;
+            if (!this.crafting) { // can't move while in a menu
+                if (Math.abs(this.vy) < this.maxSpeed) {
+                    if (this.keys.includes("w") || this.keys.includes("arrowup")) // moving up
+                        this.vy += 0.2;
+                    if (this.keys.includes("s") || this.keys.includes("arrowdown")) // moving down
+                        this.vy -= 0.2;
+                }
+                if (Math.abs(this.vx) < this.maxSpeed) {
+                    if (this.keys.includes("a") || this.keys.includes("arrowleft")) // moving left
+                        this.vx += 0.2;
+                    if (this.keys.includes("d") || this.keys.includes("arrowright")) // moving right
+                        this.vx -= 0.2;
+                }
+            }
+            // friction
+            this.vx *= 0.6;
+            this.vy *= 0.6;
+            if (this.mouse.down === true) { // clicking mouse
+
+            }
         }
     };
 }
 // handle server io
 io.on("connection", function (socket) { // start communication to client
     console.log("User connected: " + socket.id);
-    objects.push(createPlayer(socket)); // add new player to active users
+    socket = Player(socket); // add player attributes to socket
+    objects.push(socket); // add new player to active users
     socket.on("initServer", function(data) {
         socket = { // merge new data into socket
             ...socket,
             ...data
         };
         // send output data to client
-        data = getFOV(socket);
+        data = socket.fov;
         socket.emit("initClient", data);
     });
     socket.on("clientPing", function(data) {
@@ -119,7 +191,7 @@ io.on("connection", function (socket) { // start communication to client
             ...data
         };
         // send output data to client
-        data = getFOV(socket);
+        data = socket.fov;
         socket.emit("serverPing", data);
     });
     socket.on("disconnect", function() {
@@ -134,20 +206,23 @@ http.listen(port, function () { // start the server
 // run the game
 setInterval(function() { // server game tick
     let updated = [];
-    for (obj of objects) { // iterate through game objects
-        if (obj.type == "player") { // find players
-            if (obj.updated === false) { // update player if not done yet
-                obj.update();
-                obj.updated = true;
-            }
-            for (near of getFOV(obj)) { // update the objects around the player
-                if (near.updated === true)
-                    continue;
-                near.update();
-                near.updated = true;
-            }
+    for (let obj of objects) { // iterate through game objects
+        if (obj.type != "player") // find players
+            continue;
+        if (obj.updated === false) { // update player if not done yet
+            obj.update();
+            obj.updated = true;
+            updated.push(obj);
+        }
+        obj.fov = getFov(obj);
+        for (let near of obj.fov) { // update the objects around the player
+            if (near.updated === true)
+                continue;
+            near.update();
+            near.updated = true;
+            updated.push(near);
         }
     }
-    for (obj of updated)
+    for (let obj of updated)
         obj.updated = false;
 }, 1000/tps);

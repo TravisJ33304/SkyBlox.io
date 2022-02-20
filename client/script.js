@@ -50,8 +50,11 @@ function render() { // draw game objects
     window.setInterval(function () { // main game render loop
         window.requestAnimationFrame(function () {
             ctx.clearRect(0, 0, input.canvas.width, input.canvas.height); // erase canvas to render new frame
-            for (obj of objects) // draw each game object
+            for (let obj of objects) { // draw each game object
                 obj.draw(ctx);
+                if (obj.name == input.name)
+                    obj.drawSelf(ctx);
+            }
         });
     }, 1000/fps);
 }
